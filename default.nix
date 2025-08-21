@@ -2,28 +2,37 @@
   pkgs ? import <nixpkgs> { },
 }:
 
-pkgs.stdenv.mkDerivation {
-  pname = "mcu-cli";
-  version = "1.0.0";
+pkgs.buildNpmPackage {
+  pname = "mcuc";
+  version = "1.0.1";
 
   src = ./.;
 
-  buildInputs = with pkgs; [
-    nodejs_20
-    yarn
+  npmDepsHash = "sha256-DOSl6WulsXz9Yg6y46N2RvjGpyUoA6wQBIG/9n/yn78=";
+
+  npmBuild = "run build";
+
+  nativeBuildInputs = with pkgs; [
+    makeWrapper
+    jq
   ];
 
-  yarnOfflineCache = pkgs.fetchYarnDeps {
-    yarnLock = ./yarn.lock;
-    ssha256 = "sha256-ijfalMn9FO/KvpDUj7zWtl6wcmOzQHwZ5wNqamdISYg=";
-  };
-
   installPhase = ''
-    yarn install --offline --frozen-lockfile --ignore-scripts --cache-folder=$yarnOfflineCache
-    yarn build
+    runHook preInstall
+
+    mkdir -p $out/lib/node_modules/mcuc
+    cp -r dist package.json node_modules $out/lib/node_modules/mcuc
+
     mkdir -p $out/bin
-    cp dist/bin/muc-cli.js $out/bin/muc-cli
-    chmod +x $out/bin/muc-cli
+    for binPath in $(jq -r '.bin | to_entries[] | "\(.key)=\(.value)"' package.json); do
+      name=''${binPath%=*}
+      target=''${binPath#*=}
+      makeWrapper ${pkgs.nodejs}/bin/node $out/bin/$name \
+        --add-flags "$out/lib/node_modules/mcuc/$target" \
+        --set NODE_PATH "$out/lib/node_modules/mcuc/node_modules:$out/lib/node_modules"
+    done
+
+    runHook postInstall
   '';
 
   meta = with pkgs.lib; {
@@ -31,6 +40,6 @@ pkgs.stdenv.mkDerivation {
     license = licenses.mit;
     maintainers = with maintainers; [ hoppxi ];
     platforms = platforms.all;
-    mainProgram = "mcu-cli";
+    mainProgram = "mcuc";
   };
 }

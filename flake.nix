@@ -16,16 +16,18 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
+        mcu-cli = pkgs.callPackage ./default.nix { inherit pkgs; };
       in
       {
-        packages.default = pkgs.callPackage ./default.nix {
-          inherit pkgs;
+        packages = {
+          default = mcu-cli;
+          mcu-cli = mcu-cli;
         };
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             nodejs_20
-            yarn
+            npm
           ];
         };
       }

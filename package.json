@@ -1,12 +1,12 @@
 {
-  "name": "mcu-cli",
-  "version": "1.0.0",
+  "name": "mcuc",
+  "version": "1.0.1",
   "bin": {
-    "mcu-cli": "dist/bin/mcu-cli.js"
+    "mcuc": "dist/bin/mcuc.js"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/bin/mcu-cli.js"
+    "start": "node dist/bin/mcuc.js"
   },
   "keywords": [
     "mcu",
@@ -21,12 +21,11 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "@material/material-color-utilities": "^0.3.0",
     "chalk": "^5.6.0",
-    "colorthief": "^2.6.0",
     "commander": "^14.0.0",
     "js-yaml": "^4.1.0",
     "sharp": "^0.34.3"

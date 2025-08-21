@@ -1,5 +1,5 @@
 import * as yaml from "js-yaml";
-import { Theme, ThemeColor } from "./types";
+import { Theme, ThemeColor } from "../types/mcuc";
 
 function transformThemeKeys(theme: any, prefix: string, casing: string): any {
   const out: any = {};

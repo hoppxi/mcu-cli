@@ -6,7 +6,7 @@ import * as path from "path";
 import { MaterialCli } from "../lib/material-cli";
 import { OutputFormatter } from "../lib/format";
 import { Logger } from "../lib/logger";
-import { ThemeColor, Theme } from "../lib/types";
+import { ThemeColor, Theme } from "../types/mcuc";
 import { getDominantColorHex } from "../lib/material-cli";
 
 const logger = new Logger();
@@ -14,11 +14,11 @@ const logger = new Logger();
 const program = new Command();
 
 program
-  .name("mcu-cli")
+  .name("mcuc")
   .description(
     "Material Color Utilities CLI - Generate and inspect Material 3 color themes"
   )
-  .version("1.0.0");
+  .version("1.0.1");
 
 program
   .command("generate")

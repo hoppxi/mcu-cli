@@ -9,7 +9,7 @@ import {
 import sharp from "sharp";
 import { contrastRatio } from "./contrast";
 
-import { Theme as Themed, ThemeColor } from "./types";
+import { Theme as Themed, ThemeColor } from "../types/mcuc";
 
 export async function getDominantColorHex(
   imageBuffer: Buffer
