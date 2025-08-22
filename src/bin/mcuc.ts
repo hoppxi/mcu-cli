@@ -32,7 +32,7 @@ program
   .option("-o, --out <file>", "Write output to file instead of stdout")
   .option(
     "-f, --format <fmt>",
-    "Output format: json|table|yaml|css|scss",
+    "Output format: json|table|yaml|css|scss|html|less|styl|js|ts|xml",
     "json"
   )
   .option("-p, --prefix <prefix>", "Prefix for variable names", "")
