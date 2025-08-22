@@ -9,7 +9,7 @@ import { Logger } from "../lib/logger";
 import { ThemeColor, Theme } from "../types/mcuc";
 import { getDominantColorHex } from "../lib/material-cli";
 
-const logger = new Logger();
+const logger = new Logger(true);
 
 const program = new Command();
 
@@ -18,7 +18,12 @@ program
   .description(
     "Material Color Utilities CLI - Generate and inspect Material 3 color themes"
   )
-  .version("1.0.2");
+  .version("1.0.3")
+  .option("-l, --log", "Enable detailed logging for progress", false);
+
+program.hook("preAction", (cmd) => {
+  logger.enabled = true;
+});
 
 program
   .command("generate")
