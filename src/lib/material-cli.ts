@@ -7,8 +7,7 @@ import {
   Hct,
 } from "@material/material-color-utilities";
 import sharp from "sharp";
-import { contrastRatio } from "./contrast";
-
+import { Contrast } from "./contrast";
 import { Theme as Themed, ThemeColor } from "../types/mcuc";
 
 export async function getDominantColorHex(
@@ -105,7 +104,7 @@ export class MaterialCli {
     const a = argbFromHex(colorA);
     const b = argbFromHex(colorB);
     return {
-      ratio: Number(contrastRatio(a, b).toFixed(3)),
+      ratio: Number(Contrast.ratio(a, b).toFixed(3)),
       colorA: colorA,
       colorB: colorB,
     };
