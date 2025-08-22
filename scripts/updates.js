@@ -7,7 +7,7 @@ const program = new Command();
 
 program
   .name("update-version")
-  .description("Update version in package.json, flake.nix, and bin/mcuc.ts")
+  .description("Update version in package.json, default.nix, and bin/mcuc.ts")
   .argument("<version>", "New version to set")
   .action(async (version) => {
     const rootDir = process.cwd();
@@ -22,7 +22,7 @@ program
         },
       },
       {
-        file: path.join(rootDir, "flake.nix"),
+        file: path.join(rootDir, "default.nix"),
         update: (content) =>
           content.replace(/version\s*=\s*".*?"/, `version = "${version}"`),
       },
