@@ -4,7 +4,7 @@
 
 pkgs.buildNpmPackage {
   pname = "mcuc";
-  version = "1.0.1";
+  version = "1.0.2";
 
   src = ./.;
 

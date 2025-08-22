@@ -28,6 +28,7 @@ export interface ThemeColor {
   inverseSurface: string;
   inverseOnSurface: string;
   inversePrimary: string;
+  surfaceTint: string;
   surfaceDim: string;
   surfaceBright: string;
   surfaceContainerLowest: string;

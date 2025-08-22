@@ -146,6 +146,9 @@ export class MaterialCli {
       inverseSurface: hexFromArgb(scheme.inverseSurface),
       inverseOnSurface: hexFromArgb(scheme.inverseOnSurface),
       inversePrimary: hexFromArgb(scheme.inversePrimary),
+      surfaceTint: hexFromArgb(
+        light ? palettes.a1.tone(40) : palettes.a1.tone(80)
+      ),
       surfaceDim: hexFromArgb(
         light ? palettes.neutral.tone(87) : palettes.neutral.tone(6)
       ),

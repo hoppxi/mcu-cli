@@ -18,7 +18,7 @@ program
   .description(
     "Material Color Utilities CLI - Generate and inspect Material 3 color themes"
   )
-  .version("1.0.1");
+  .version("1.0.2");
 
 program
   .command("generate")
