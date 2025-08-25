@@ -18,7 +18,7 @@ program
   .description(
     "Material Color Utilities CLI - Generate and inspect Material 3 color themes"
   )
-  .version("1.0.3")
+  .version("1.1.0")
   .option("-l, --log", "Enable detailed logging for progress", false);
 
 program.hook("preAction", (cmd) => {
