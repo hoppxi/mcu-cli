@@ -1,5 +1,6 @@
 import * as yaml from "js-yaml";
 import { Theme, ThemeColor } from "../types/mcuc";
+import { Utils } from "./utils";
 
 export class OutputFormatter {
   static format(
@@ -19,8 +20,6 @@ export class OutputFormatter {
         return this._formatStyl(processedTheme);
       case "css":
         return this._formatCss(processedTheme);
-      case "html":
-        return this._formatHtml(processedTheme);
       case "json":
         return JSON.stringify(processedTheme, null, 2);
       case "ts":
@@ -64,20 +63,97 @@ export class OutputFormatter {
   }
 
   static formatContrast(
-    data: { ratio: number; colorA: string; colorB: string },
-    fmt: string
+    data:
+      | { ratio: number; colorA: string; colorB: string; wcag: any }
+      | { ratio: number; colorA: string; colorB: string; wcag: any }[],
+    fmt: string,
+    wcagOnly = false
   ): string {
+    const toDisplay = (d: any) =>
+      wcagOnly
+        ? {
+            colorA: d.colorA,
+            colorB: d.colorB,
+            AA: d.wcag.AA ? "Pass" : "Fail",
+            AA_Large: d.wcag.AA_Large ? "Pass" : "Fail",
+            AAA: d.wcag.AAA ? "Pass" : "Fail",
+            AAA_Large: d.wcag.AAA_Large ? "Pass" : "Fail",
+          }
+        : {
+            ratio: d.ratio,
+            colorA: d.colorA,
+            colorB: d.colorB,
+            AA: d.wcag.AA,
+            AA_Large: d.wcag.AA_Large,
+            AAA: d.wcag.AAA,
+            AAA_Large: d.wcag.AAA_Large,
+          };
+
+    const normalized = Array.isArray(data)
+      ? data.map(toDisplay)
+      : [toDisplay(data)];
+
     switch (fmt) {
       case "json":
-        return JSON.stringify(data, null, 2);
+        return JSON.stringify(normalized, null, 2);
       case "yaml":
-        return yaml.dump(data);
+        return yaml.dump(normalized);
       case "table":
-        console.table(data);
+        console.table(normalized);
         return "";
       default:
         return `Unsupported format: ${fmt}`;
     }
+  }
+
+  static async formatPreview(
+    theme: { light?: ThemeColor; dark?: ThemeColor },
+    usage: boolean
+  ): Promise<string> {
+    const lightTheme = theme.light!;
+    const darkTheme = theme.dark!;
+
+    function renderColors(themeColors: ThemeColor, label: string) {
+      return Object.entries(themeColors)
+        .map(
+          ([key, value]) =>
+            `<div class="color-card">
+            <div class="color-swatch" style="background-color: ${value};"></div>
+            <div class="color-label">${label} - ${key}: ${value}</div>
+          </div>`
+        )
+        .join("\n");
+    }
+
+    function renderUsage(themeColors: ThemeColor) {
+      if (!usage) return "";
+      return `
+      <h3>Text Examples</h3>
+      <p style="color: ${themeColors.onBackground}">This is primary text</p>
+      <p style="color: ${themeColors.onSurface}">This is secondary text</p>
+
+      <h3>Buttons</h3>
+      <button style="background-color: ${themeColors.primary}; color: ${themeColors.onPrimary}; padding: 0.5rem 1rem; border: none; border-radius: 4px; margin: 0.25rem;">Primary</button>
+      <button style="background-color: ${themeColors.secondary}; color: ${themeColors.onSecondary}; padding: 0.5rem 1rem; border: none; border-radius: 4px; margin: 0.25rem;">Secondary</button>
+
+      <h3>Cards</h3>
+      <div style="background-color: ${themeColors.surfaceContainerHigh}; color: ${themeColors.onSurface}; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">Card Example</div>
+    `;
+    }
+
+    const html = Utils.previewTemplate
+      .replace("{{ LIGHT_BG }}", lightTheme.background)
+      .replace("{{ LIGHT_ON_BG }}", lightTheme.onBackground)
+      .replace("{{ LIGHT_OUTLINE }}", lightTheme.outline)
+      .replace("{{ DARK_BG }}", darkTheme.background)
+      .replace("{{ DARK_ON_BG }}", darkTheme.onBackground)
+      .replace("{{ DARK_OUTLINE }}", darkTheme.outline)
+      .replace("{{ LIGHT_COLORS }}", renderColors(lightTheme, "Light"))
+      .replace("{{ DARK_COLORS }}", renderColors(darkTheme, "Dark"))
+      .replace("{{ LIGHT_USAGE }}", renderUsage(lightTheme))
+      .replace("{{ DARK_USAGE }}", renderUsage(darkTheme));
+
+    return html;
   }
 
   private static _transformThemeKeys(
@@ -90,35 +166,10 @@ export class OutputFormatter {
       out[scheme] = {};
       const colors = theme[scheme];
       for (const key in colors) {
-        out[scheme][`${prefix}${this._toCase(key, casing)}`] = colors[key];
+        out[scheme][`${prefix}${Utils.toCase(key, casing)}`] = colors[key];
       }
     }
     return out;
-  }
-
-  private static _toCase(str: string, caseFormat: string): string {
-    const parts = str
-      .replace(/([A-Z])/g, " $1")
-      .trim()
-      .split(/[\s_-]+/);
-
-    switch (caseFormat) {
-      case "camel":
-        return parts
-          .map((p, i) =>
-            i === 0
-              ? p.charAt(0).toLowerCase() + p.slice(1)
-              : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
-          )
-          .join("");
-      case "pascal":
-        return parts
-          .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-          .join("");
-      case "kebab":
-      default:
-        return parts.map((p) => p.toLowerCase()).join("-");
-    }
   }
 
   private static _formatScss(theme: any): string {
@@ -165,32 +216,6 @@ export class OutputFormatter {
       out += "}\n";
     }
     return out.trim();
-  }
-
-  private static _formatHtml(theme: any): string {
-    let out = `<html><head>
-<style>
-body { font-family: sans-serif; }
-.swatch-container { display: flex; flex-wrap: wrap; gap: 10px; }
-.swatch { width: 300px; height: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; font-weight: bold; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
-.swatch span { background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px; }
-</style>
-</head><body>\n`;
-
-    for (const scheme in theme) {
-      const colors = theme[scheme];
-      out += `<h2>${scheme} theme</h2><div class="swatch-container">\n`;
-      for (const key in colors) {
-        out += `<div class="swatch" style="background:${colors[key]}">
-<span>${key}</span><br/>
-<span>${colors[key]}</span>
-</div>\n`;
-      }
-      out += `</div>\n`;
-    }
-
-    out += `</body></html>`;
-    return out;
   }
 
   private static _formatXml(theme: any): string {
