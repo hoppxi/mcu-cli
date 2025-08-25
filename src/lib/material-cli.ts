@@ -6,42 +6,88 @@ import {
   Theme,
   Hct,
 } from "@material/material-color-utilities";
-import sharp from "sharp";
 import { Contrast } from "./contrast";
 import { Theme as Themed, ThemeColor } from "../types/mcuc";
-
-export async function getDominantColorHex(
-  imageBuffer: Buffer
-): Promise<string> {
-  // Downscale to a small image for analysis
-  const { data, info } = await sharp(imageBuffer)
-    .resize(16, 16, { fit: "fill" })
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
-  const colorCounts = new Map<string, number>();
-  for (let i = 0; i < data.length; i += info.channels) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const hex = `#${r.toString(16).padStart(2, "0")}${g
-      .toString(16)
-      .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-    colorCounts.set(hex, (colorCounts.get(hex) || 0) + 1);
-  }
-
-  let dominantColor = "#000000";
-  let maxCount = 0;
-  for (const [hex, count] of colorCounts.entries()) {
-    if (count > maxCount) {
-      dominantColor = hex;
-      maxCount = count;
-    }
-  }
-  return dominantColor;
-}
+import { Utils } from "./utils";
 
 export class MaterialCli {
+  static async generatePalette(
+    source: string | Buffer,
+    opts: {
+      hue?: number;
+      chroma?: number;
+      tone?: number;
+      theme?: "light" | "dark" | "both";
+    } = {}
+  ): Promise<{
+    light?: Record<string, string[]>;
+    dark?: Record<string, string[]>;
+  } | null> {
+    let themeObj: Theme | null = null;
+
+    if (typeof source === "string") {
+      let seed = argbFromHex(source);
+      if (
+        opts.hue !== undefined ||
+        opts.chroma !== undefined ||
+        opts.tone !== undefined
+      ) {
+        const hct = Hct.fromInt(seed);
+        if (opts.hue !== undefined) hct.hue = opts.hue;
+        if (opts.chroma !== undefined) hct.chroma = opts.chroma;
+        if (opts.tone !== undefined) hct.tone = opts.tone;
+        seed = hct.toInt();
+      }
+      themeObj = themeFromSourceColor(seed);
+    } else {
+      // Image buffer
+      const hex = await this._getDominantColorHex(source);
+      const seed = argbFromHex(hex);
+      themeObj = themeFromSourceColor(seed);
+    }
+
+    if (!themeObj) return null;
+
+    const mapped = MaterialCli.mapTheme(themeObj);
+
+    function generateTones(scheme: any): Record<string, string[]> {
+      const tones: Record<string, string[]> = {};
+      const roles = [
+        "primary",
+        "secondary",
+        "tertiary",
+        "error",
+        "background",
+        "surface",
+      ];
+
+      for (const role of roles) {
+        const value = scheme[role];
+        const hct = Hct.fromInt(argbFromHex(value));
+        // Generate tones 0–100 in increments of 10
+        const roleTones: string[] = [];
+        for (let t = 0; t <= 100; t += 10) {
+          const toneColor = Hct.from(hct.hue, hct.chroma, t);
+          roleTones.push(hexFromArgb(toneColor.toInt()));
+        }
+        tones[role] = roleTones;
+      }
+
+      return tones;
+    }
+
+    const result: {
+      light?: Record<string, string[]>;
+      dark?: Record<string, string[]>;
+    } = {};
+    if (opts.theme === "light" || opts.theme === "both")
+      result.light = generateTones(mapped.light);
+    if (opts.theme === "dark" || opts.theme === "both")
+      result.dark = generateTones(mapped.dark);
+
+    return result;
+  }
+
   static async generateTheme(
     source: string | Buffer,
     opts: {
@@ -65,7 +111,7 @@ export class MaterialCli {
       theme = themeFromSourceColor(seed);
     } else {
       // Image buffer: extract dominant color, then make theme
-      const hex = await getDominantColorHex(source);
+      const hex = await this._getDominantColorHex(source);
       seed = argbFromHex(hex);
       theme = themeFromSourceColor(seed);
     }
@@ -75,10 +121,10 @@ export class MaterialCli {
     return mapped;
   }
 
-  static async colorInfo(source: string | Buffer): Promise<{
-    hex: string;
-    hct: { hue: number; chroma: number; tone: number };
-  }> {
+  static async colorInfo(
+    source: string | Buffer,
+    opts?: { extended?: boolean; distance?: string }
+  ): Promise<any> {
     let color: number;
     if (typeof source === "string") {
       color = argbFromHex(source);
@@ -86,27 +132,70 @@ export class MaterialCli {
       const theme = await themeFromImage(new Uint8Array(source));
       color = theme.source;
     }
+
+    const hex = hexFromArgb(color);
     const hct = Hct.fromInt(color);
-    return {
-      hex: hexFromArgb(color),
+    const result: any = {
+      hex,
       hct: {
         hue: Number(hct.hue.toFixed(2)),
         chroma: Number(hct.chroma.toFixed(2)),
         tone: Number(hct.tone.toFixed(2)),
       },
     };
+
+    if (opts?.extended) {
+      const [r, g, b] = Utils.hexToRgb(hex);
+      const lab = Utils.rgbToLab(r, g, b);
+      const lch = Utils.labToLch(lab);
+      const oklch = Utils.rgbToOklch(r, g, b);
+      const luminance = Utils.relativeLuminance(r, g, b);
+
+      result.extended = { lab, lch, oklch, luminance };
+    }
+
+    if (opts?.distance) {
+      const target = argbFromHex(opts.distance);
+      const targetHex = hexFromArgb(target);
+      const [r1, g1, b1] = Utils.hexToRgb(hex);
+      const [r2, g2, b2] = Utils.hexToRgb(targetHex);
+
+      const lab1 = Utils.rgbToLab(r1, g1, b1);
+      const lab2 = Utils.rgbToLab(r2, g2, b2);
+
+      result.distance = {
+        target: targetHex,
+        deltaE76: Utils.deltaE76(lab1, lab2),
+        deltaE00: Utils.deltaE00(lab1, lab2),
+      };
+    }
+
+    return result;
   }
 
   static contrastRatio(
     colorA: string,
     colorB: string
-  ): { ratio: number; colorA: string; colorB: string } {
+  ): {
+    ratio: number;
+    colorA: string;
+    colorB: string;
+    wcag: { AA: boolean; AA_Large: boolean; AAA: boolean; AAA_Large: boolean };
+  } {
     const a = argbFromHex(colorA);
     const b = argbFromHex(colorB);
+    const ratio = Number(Contrast.ratio(a, b).toFixed(3));
+
     return {
-      ratio: Number(Contrast.ratio(a, b).toFixed(3)),
-      colorA: colorA,
-      colorB: colorB,
+      ratio,
+      colorA,
+      colorB,
+      wcag: {
+        AA: ratio >= 4.5,
+        AA_Large: ratio >= 3.0,
+        AAA: ratio >= 7.0,
+        AAA_Large: ratio >= 4.5,
+      },
     };
   }
 
@@ -176,4 +265,6 @@ export class MaterialCli {
       dark: map(theme.schemes.dark, theme.palettes, false),
     };
   }
+
+  private static _getDominantColorHex = Utils.getDominantColorHex;
 }
