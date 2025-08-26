@@ -1,6 +1,38 @@
 import sharp from "sharp";
+import fs from "fs/promises";
+import path from "path";
+import { Logger } from "./logger";
+
+const loggerType = new Logger();
 
 export class Utils {
+  static async loadImageIfProvided(
+    imgPath: string | null | undefined,
+    logger: typeof loggerType
+  ) {
+    if (!imgPath) return null;
+    const resolved = path.resolve(imgPath);
+    logger.info(`Loading image: ${resolved}`);
+    return fs.readFile(resolved);
+  }
+
+  static async fail(message: string, logger: typeof loggerType) {
+    logger.error(message);
+    process.exit(1);
+  }
+
+  static async ensureFileExists(filePath: string, logger: typeof loggerType) {
+    try {
+      return fs.access(filePath);
+    } catch {
+      this.fail(`File not found: ${filePath}`, logger);
+    }
+  }
+
+  static async validateHexColor(color: string): Promise<boolean> {
+    return /^#?[0-9A-Fa-f]{6}$/.test(color);
+  }
+
   static randomHexColor(): string {
     return (
       "#" +

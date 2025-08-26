@@ -1,0 +1,233 @@
+.TH MCUC 1 "2025-08-25" "Material Color Utilities CLI" "User Commands"
+
+.SH NAME
+mcuc \- Command-line interface for generating, inspecting, and previewing Material 3 color themes
+
+.SH SYNOPSIS
+.B mcuc
+[\fIOPTIONS\fR] [\fICOMMAND\fR]
+
+.SH DESCRIPTION
+The **Material Color Utilities CLI (MCUC)** is a command-line tool that helps designers and developers
+generate, inspect, and preview **Material 3 color themes**.  
+It supports theme generation from a single color or an image, contrast checking, and HTML previews of themes.
+
+.SH OPTIONS
+.TP
+.B \-V, \-\-version
+Display the MCUC version.
+
+.TP
+.B -l, --log
+Enable detailed progress logging (default: false).
+
+.TP
+.B -h, --help
+Display general help for MCUC.
+
+.SH COMMANDS
+.TP
+.B generate [options] [input]
+Generate a Material 3 theme or full tonal palette from a hex color or an image.
+
+.TP
+.B info [options] [input]
+Display detailed information about a color or image, including color values and conversions.
+
+.TP
+.B contrast [options] [input...]
+Check the contrast ratio between two colors, optionally against multiple backgrounds.
+
+.TP
+.B preview [options] [input]
+Generate an interactive HTML preview of a theme based on a color or image.
+
+.TP
+.B help [command]
+Show detailed help for a specific command.
+
+.SH COMMAND DETAILS
+
+.SS generate
+Generate a Material 3 color theme or full tonal palette.
+
+.TP
+.B Usage:
+mcuc generate [options] [input]
+
+.TP
+.B Arguments:
+.BI input
+Hex color (\fR#RRGGBB\fR) or image file path. If both are provided, the image overrides the color.
+
+.TP
+.B Options:
+.RS
+.TP
+.B -o, --out <file>
+Write the generated theme to a file instead of standard output.
+
+.TP
+.B -p, --palette
+Generate a full tonal palette instead of just the theme (default: false).
+
+.TP
+.B -f, --format <fmt>
+Specify output format: json | table | yaml | css | scss | less | styl | js | ts | xml (default: json).
+
+.TP
+.B -P, --prefix <prefix>
+Prefix variable names in the output (default: "").
+
+.TP
+.B -C, --case <style>
+Variable name casing: camel | pascal | kebab (default: kebab).
+
+.TP
+.B -r, --random
+Use a random color instead of the provided input (default: false).
+
+.TP
+.B -i, --image <img>
+Extract dominant color from an image (overrides input).
+
+.TP
+.B -T, --theme <theme>
+Select theme mode: light | dark | both (default: dark).
+
+.TP
+.B --hue <val>
+Override hue (0–360).
+
+.TP
+.B --chroma <val>
+Override chroma (0–150).
+
+.TP
+.B --tone <val>
+Override tone (0–100).
+
+.TP
+.B -h, --help
+Display help for the generate command.
+.RE
+
+.SS info
+Display detailed information about a color or image.
+
+.TP
+.B Usage:
+mcuc info [options] [input]
+
+.TP
+.B Arguments:
+.BI input
+Hex color (\fR#RRGGBB\fR) or image file path.
+
+.TP
+.B Options:
+.RS
+.TP
+.B -i, --image <img>
+Extract dominant color from image (overrides input).
+
+.TP
+.B -f, --format <fmt>
+Output format: json | table | yaml (default: json).
+
+.TP
+.B -e, --extended
+Show extended color information including LAB, LCH, OKLCH, and luminance (default: false).
+
+.TP
+.B -d, --distance <color>
+Compare input color to another color and display ΔE difference.
+
+.TP
+.B -h, --help
+Display help for the info command.
+.RE
+
+.SS contrast
+Check contrast ratio between two colors.
+
+.TP
+.B Usage:
+mcuc contrast [options] [input...]
+
+.TP
+.B Arguments:
+.BI input
+Two hex colors (\fR#RRGGBB #RRGGBB\fR) to test contrast.
+
+.TP
+.B Options:
+.RS
+.TP
+.B -f, --format <fmt>
+Output format: json | table | yaml (default: json).
+
+.TP
+.B -b, --bg <color...>
+Specify background color(s) to test against.
+
+.TP
+.B -w, --wcag-only
+Display only WCAG compliance levels (default: false).
+
+.TP
+.B -h, --help
+Display help for the contrast command.
+.RE
+
+.SS preview
+Generate an HTML preview of a theme.
+
+.TP
+.B Usage:
+mcuc preview [options] [input]
+
+.TP
+.B Arguments:
+.BI input
+Hex color (\fR#RRGGBB\fR) or image file path.
+
+.TP
+.B Options:
+.RS
+.TP
+.B -o, --out <file>
+Write the preview HTML to a file instead of standard output.
+
+.TP
+.B -i, --image <img>
+Extract dominant color from image (overrides input).
+
+.TP
+.B -u, --usage
+Include example UI components (text, buttons, cards) in the preview.
+
+.TP
+.B -h, --help
+Display help for the preview command.
+.RE
+
+.SH EXAMPLES
+.TP
+Generate a theme from a color:  
+.B mcuc generate #ff0000
+
+.TP
+Get detailed info about a color:  
+.B mcuc info #ff0000
+
+.TP
+Check contrast between two colors:  
+.B mcuc contrast #ff0000 #00ff00
+
+.TP
+Preview a theme from an image:  
+.B mcuc preview ./image.png
+
+.SH SEE ALSO
+.BR node (1)

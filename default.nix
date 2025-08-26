@@ -32,6 +32,9 @@ pkgs.buildNpmPackage {
         --set NODE_PATH "$out/lib/node_modules/mcuc/node_modules:$out/lib/node_modules"
     done
 
+    mkdir -p $out/share/man/man1
+    cp docs/man/mcuc.1 $out/share/man/man1/
+
     runHook postInstall
   '';
 

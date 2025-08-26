@@ -4,9 +4,10 @@
   "bin": {
     "mcuc": "dist/bin/mcuc.js"
   },
+  "man": "docs/man/mcuc.1",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/bin/mcuc.js"
+    "mcuc": "node dist/bin/mcuc.js"
   },
   "keywords": [
     "mcu",
